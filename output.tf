@@ -1,4 +1,3 @@
 output "websiteendpoint" {
-    value = aws_s3_bucket.bucket1.website_endpoint
-  
+    value = "http://web-bucket-mathesh-2025.s3-website.ap-south-1.amazonaws.com"
 }
