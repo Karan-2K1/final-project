@@ -1,4 +1,4 @@
-name: Deploy Static Website to S3
+name: Deploy S3 Static Website with Terraform
 
 on:
   push:
@@ -13,43 +13,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up AWS credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Create S3 bucket if it doesn't exist
-        run: |
-          if ! aws s3api head-bucket --bucket web-bucket-mathesh-2025 2>/dev/null; then
-            echo "Bucket does not exist. Creating..."
-            aws s3api create-bucket --bucket web-bucket-mathesh-2025 --region ap-south-1 --create-bucket-configuration LocationConstraint=ap-south-1
-            aws s3api put-public-access-block --bucket web-bucket-mathesh-2025 --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
-          else
-            echo "Bucket already exists. Skipping creation."
-          fi
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.8.0
 
-      - name: Upload index.html and error.html to S3
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Upload website files to S3
         run: |
           aws s3 cp index.html s3://web-bucket-mathesh-2025/index.html --acl public-read --content-type text/html
           aws s3 cp error.html s3://web-bucket-mathesh-2025/error.html --acl public-read --content-type text/html
-
-      - name: Configure S3 website hosting
-        run: |
-          aws s3 website s3://web-bucket-mathesh-2025/ --index-document index.html --error-document error.html
-
-      - name: Attach public read policy to the bucket
-        run: |
-          aws s3api put-bucket-policy --bucket web-bucket-mathesh-2025 --policy '{
-            "Version": "2012-10-17",
-            "Statement": [
-              {
-                "Sid": "PublicReadGetObject",
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "s3:GetObject",
-                "Resource": "arn:aws:s3:::web-bucket-mathesh-2025/*"
-              }
-            ]
-          }'
