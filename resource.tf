@@ -24,6 +24,7 @@ resource "aws_s3_object" "index" {
   key          = "index.html"
   source       = "index.html"
   content_type = "text/html"
+  acl          = "public-read"    # ✅ This line added
 }
 
 # Upload error.html
@@ -32,6 +33,7 @@ resource "aws_s3_object" "error" {
   key          = "error.html"
   source       = "error.html"
   content_type = "text/html"
+  acl          = "public-read"    # ✅ This line added
 }
 
 # Configure S3 bucket for static website hosting
