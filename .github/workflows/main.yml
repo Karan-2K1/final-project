@@ -3,7 +3,7 @@ name: Deploy Static Website to S3
 on:
   push:
     branches:
-      - main   # or change to your branch
+      - main
 
 jobs:
   deploy:
@@ -18,7 +18,17 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1   # Change to your region (like ap-south-1 for Mumbai)
+          aws-region: ap-south-1
+
+      - name: Create S3 bucket if it doesn't exist
+        run: |
+          if ! aws s3api head-bucket --bucket web-bucket-mathesh-2025 2>/dev/null; then
+            echo "Bucket does not exist. Creating..."
+            aws s3api create-bucket --bucket web-bucket-mathesh-2025 --region ap-south-1 --create-bucket-configuration LocationConstraint=ap-south-1
+            aws s3api put-public-access-block --bucket web-bucket-mathesh-2025 --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+          else
+            echo "Bucket already exists. Skipping creation."
+          fi
 
       - name: Upload index.html and error.html to S3
         run: |
